@@ -12,12 +12,12 @@ The following commands assume the working directory is the root of the project.
 # Preprocessing
 For now we have two scripts which prepare the bow (bag of words) from the excel provided.
 The excel is in app/data and the scripts work with an excel formatted like this one.
-1. Preparing the bow using the most N common words
-``` python app/cli/output-bow.py [N] [output file name] ```
-Example: to use 200 most common words and the output file name is data-200-most-common.csv
-``` python app/cli/output-bow.py 200 data-200-most-common.csv ```
+1. Preparing the bow using the most N common words  
+``` python app/cli/output-bow.py [N] [output file name] ```  
+Example: to use 200 most common words and the output file name is data-200-most-common.csv  
+``` python app/cli/output-bow.py 200 data-200-most-common.csv ```  
 
-2. Preparing the bow using keywords provided in excel
-``` python app/cli/output-bow-keywords.py [output file name] ```
-Example: the output file name is data-keyword.csv
-``` python app/cli/output-bow.py data-keyword.csv ```
+2. Preparing the bow using keywords provided in excel  
+``` python app/cli/output-bow-keywords.py [output file name] ```  
+Example: the output file name is data-keyword.csv  
+``` python app/cli/output-bow.py data-keyword.csv ```  

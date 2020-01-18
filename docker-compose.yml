@@ -1,7 +1,32 @@
 version: '3'
+
+volumes:
+  datamining:
+    driver: local
+
 services:
 
-  python:
+  mongo:
+    image: mongo:4.2
+    # restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - datamining:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+
+  mongo-express:
+    image: mongo-express
+    # restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+
+  flask:
     build: .
     expose:
      - 80
@@ -10,4 +35,17 @@ services:
     volumes:
      - .:/home
     working_dir: /home
-    # command: python app.py --logging=info
+    depends_on:
+     - mongo
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development # This is needed for hot reload, better comment this line in production
+      - DB=mongo
+    command: cd api && flask run --port 80
+
+    # used only to run cli
+  python:
+    build: .
+    volumes:
+     - .:/home
+    working_dir: /home

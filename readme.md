@@ -6,7 +6,7 @@ The following commands assume the working directory is the root of the project.
 2. run each command as ./python (to not run the python installed on machine but the python inside docker)
 ## On machine installation
 0. needed python 3 installed on machine
-1. ```pip install requirements.txt```
+1. ```pip install -r requirements.txt```
 2. ```python download.py```
 
 # Preprocessing

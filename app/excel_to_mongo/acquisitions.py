@@ -11,36 +11,37 @@ from excel_date_to_datetime import excel_to_datetime
 import pymongo
 # from bson.objectid import ObjectId
 # to run this: docker-compose run flask python app/excel_to_mongo/acquisitions.py
+def import_acquisition():
+    data = xlrd.open_workbook(filename = 'app/data/initialdata.xlsx')
+    acquisitions = data.sheets()[0]
 
-data = xlrd.open_workbook(filename = 'app/data/initialdata.xlsx')
-acquisitions = data.sheets()[0]
+    rows = acquisitions.get_rows()
 
-rows = acquisitions.get_rows()
+    for i, val in enumerate(rows):
+        if i == 0:
+            continue # discard header
 
-for i, val in enumerate(rows):
-    if i == 0:
-        continue # discard header
-
-    document = {
-        "annuncement_date" : excel_to_datetime(val[0].value),
-        "signing_date": excel_to_datetime(val[1].value),
-        "status": val[2].value.lower().strip(),
-        "acquiror": {
-            "name": val[4].value,
-            "ticker": val[5].value.lower().strip(),
-            "state": val[6].value.lower().strip(),
-        },
-        "target": {
-            "name": val[7].value,
-            "ticker": val[8].value.lower().strip(),
-            "state": val[9].value.lower().strip()
-        },
-        "op_id": val[10].value,
-        "documents": []
-    }
-    Acquisition.insert_one(document)
-# ad unique index on op_id
-Acquisition.create_index(
-    [("op_id", pymongo.ASCENDING)],
-    unique=True
-)
+        document = {
+            "annuncement_date" : excel_to_datetime(val[0].value),
+            "signing_date": excel_to_datetime(val[1].value),
+            "status": val[2].value.lower().strip(),
+            "acquiror": {
+                "name": val[4].value,
+                "ticker": val[5].value.lower().strip(),
+                "state": val[6].value.lower().strip(),
+            },
+            "target": {
+                "name": val[7].value,
+                "ticker": val[8].value.lower().strip(),
+                "state": val[9].value.lower().strip()
+            },
+            "op_id": val[10].value,
+            "documents": []
+        }
+        Acquisition.insert_one(document)
+    # ad unique index on op_id
+    Acquisition.create_index(
+        [("op_id", pymongo.ASCENDING)],
+        unique=True,
+        sparse=True
+    )

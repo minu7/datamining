@@ -21,3 +21,16 @@ Example: to use 200 most common words and the output file name is data-200-most-
 ``` python app/cli/output-bow-keywords.py [output file name] ```  
 Example: the output file name is data-keyword.csv  
 ``` python app/cli/output-bow.py data-keyword.csv ```  
+
+# Import to MongoDB
+
+Using docker:  
+``` docker-compose run flask python app/excel_to_mongo/import_all.py ```  
+
+Without docker:  
+It's important check if MongoDB it's up and set the env variable DB to the link to the MongoDB service (probabily: localhost).  
+The MongoDB service, in this development phase, must have the following credential:  
+1. user: root
+2. password: password
+So, run:
+``` python app/excel_to_mongo/import_all.py ```  

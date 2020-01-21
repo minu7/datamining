@@ -46,6 +46,10 @@ services:
     # used only to run cli
   python:
     build: .
+    depends_on:
+     - mongo
     volumes:
      - .:/home
+    environment:
+     - DB=mongo
     working_dir: /home

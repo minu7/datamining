@@ -22,6 +22,13 @@ def import_keywords():
 
         keywords = keywords + re.split(',|;', row[2].value.lower())
 
+    for keyword in keywords:
+        Keyword.insert_one({
+            "value": keyword,
+            "writer": "ceo"
+        })
+
+    keywords = []
     documents = data.sheets()[2]
     rows = documents.get_rows()
 
@@ -35,5 +42,11 @@ def import_keywords():
 
     for keyword in keywords:
         Keyword.insert_one({
-            "value": keyword
+            "value": keyword,
+            "writer": "analyst"
         })
+
+    # for keyword in keywords:
+    #     Keyword.insert_one({
+    #         "value": keyword
+    #     })

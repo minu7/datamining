@@ -25,7 +25,7 @@ def import_keywords():
     for keyword in keywords:
         Keyword.insert_one({
             "value": keyword,
-            "writer": "ceo"
+            "type": "ceo"
         })
 
     keywords = []
@@ -43,7 +43,7 @@ def import_keywords():
     for keyword in keywords:
         Keyword.insert_one({
             "value": keyword,
-            "writer": "analyst"
+            "type": "analyst"
         })
 
     # for keyword in keywords:

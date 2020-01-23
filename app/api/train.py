@@ -6,7 +6,7 @@ from sklearn.linear_model import LogisticRegression as lr
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_val_predict
 
-from db import Paragraph
+from db import Sentence
 from db import Keyword
 
 from nltk.tokenize import word_tokenize
@@ -17,7 +17,7 @@ from train_utility import most_common_keywords
 from train_utility import words_presences
 from train_utility import words_counts
 
-sentences = Paragraph.find({ "type": "analyst" })
+sentences = Sentence.find({ "type": "analyst" })
 sentences = [sentence for sentence in sentences]
 
 # lemmatizer = WordNetLemmatizer()
@@ -27,7 +27,7 @@ pst = PorterStemmer()
 lemma_sentences = [[pst.stem(token) for token in word_tokenize(sentence["text"].lower())] for sentence in sentences]
 
 most_freq = most_common_keywords(lemma_sentences, 500)
-keywords = Keyword.find({ "writer": "analyst" })
+keywords = Keyword.find({ "type": "analyst" })
 # keywords = list(set([lemmatizer.lemmatize(keyword["value"].lower().strip()) for keyword in keywords]))
 keywords = list(set([pst.stem(keyword["value"].lower().strip()) for keyword in keywords]))
 

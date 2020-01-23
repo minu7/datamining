@@ -5,14 +5,14 @@ from os.path import dirname, abspath
 sys.path.insert(1, dirname(dirname(abspath(__file__)))) # this is needed for import Acquisition (we need to add the root folder in module search paths)
 
 import xlrd
-from api.db import Paragraph
+from api.db import Sentence
 from api.db import Acquisition
 from datetime import datetime
 from excel_date_to_datetime import excel_to_datetime
 import re
 
 
-def import_paragraphs():
+def import_sentences():
     data = xlrd.open_workbook(filename = 'app/data/initialdata.xlsx')
     documents = data.sheets()[1]
     rows = documents.get_rows()
@@ -43,7 +43,7 @@ def import_paragraphs():
             raise Exception("duplicate error")
             exit()
         d["document_id"] = document[0]["_id"]
-        Paragraph.insert_one(d)
+        Sentence.insert_one(d)
 
 
     documents = data.sheets()[2]
@@ -73,6 +73,5 @@ def import_paragraphs():
         document = list(document)
         if len(document) != 1:
             raise Exception("duplicate error")
-            exit()
         d["document_id"] = document[0]["_id"]
-        Paragraph.insert_one(d)
+        Sentence.insert_one(d)

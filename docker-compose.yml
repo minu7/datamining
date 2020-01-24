@@ -41,7 +41,7 @@ services:
       - FLASK_APP=app.py
       - FLASK_ENV=development # This is needed for hot reload, better comment this line in production
       - DB=mongo
-    command: cd api && flask run --port 80
+    command: bash -c "cd app/api && flask run --host 0.0.0.0 --port 80"
 
     # used only to run cli
   python:

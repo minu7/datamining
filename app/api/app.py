@@ -1,8 +1,15 @@
 from flask import Flask, jsonify, request
 import pickle
-from db import *
+from api.db import *
+import dateutil.parser
+from bson.json_util import dumps
+from bson import ObjectId
+from flask import abort
 
 app = Flask(__name__)
+
+def get_date(string_date):
+    return dateutil.parser.isoparse(string_date)
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -21,15 +28,16 @@ def train():
     # clf.fit(X, y)
     # model = pickle.dumps(clf)
     # Model.insert_one({ "model": model })
-    return "";
+    return "model trained";
 
+@app.route('/acquisition', methods=['POST', 'GET'], defaults={'acquisition_id': None})
 @app.route('/acquisition/<acquisition_id>', methods=['POST', 'GET'])
 def acquisition(acquisition_id):
     if request.method == 'POST':
         acquisition = request.get_json()
         document = {
-            "annuncement_date" : acquisition["annuncement_date"],
-            "signing_date": acquisition["signing_date"],
+            "annuncement_date" : get_date(acquisition["annuncement_date"]),
+            "signing_date": get_date(acquisition["signing_date"]),
             "status": acquisition["status"].lower().strip(),
             "acquiror": {
                 "name": acquisition["acquiror"]["name"],
@@ -43,25 +51,28 @@ def acquisition(acquisition_id):
             },
             "documents": []
         }
-        return jsonify(Acquisition.insert_one(document))
+        return {"_id": str(Acquisition.insert_one(document).inserted_id) }
     if acquisition_id is not None:
-        acquisition = Acquisition.find_one({ '_id': acquisition_id })
-        return jsonify(acquisition)
+        acquisition = Acquisition.find_one({ '_id': ObjectId(acquisition_id) })
+        return dumps(acquisition)
     acquisition = Acquisition.find()
-    return jsonify(acquisition)
+    return dumps(acquisition)
 
 
-@app.route('/document/<acquisition_id>', methods=['POST'])
-    def document(acquisition_id):
-        documents = request.get_json()
-        d = {
-            "link": documents["link"],
-            "date": documents["date"],
-            "source": documents["source"],
-            "type": documents["type"]
-        }
-        return Acquisition.update_one({ "_id": acquisition_id }, { '$push': {'documents': d} })
+@app.route('/document', methods=['POST'])
+def document():
+    documents = request.get_json()
+    acquisition_id = documents["acquisition_id"]
+    d = {
+        "link": documents["link"],
+        "date": get_date(documents["date"]),
+        "source": documents["source"],
+        "type": documents["type"],
+        "_id": ObjectId()
+    }
+    return { 'updated': Acquisition.update_one({ "_id": ObjectId(acquisition_id) }, { '$push': {'documents': d} }).modified_count > 0 }
 
+@app.route('/sentence', methods=['POST', 'GET'], defaults={'sentence_id': None})
 @app.route('/sentence/<sentence_id>', methods=['POST', 'GET'])
 def sentence(sentence_id):
     if request.method == 'POST':
@@ -70,39 +81,37 @@ def sentence(sentence_id):
             "text": sentence["text"],
             "class": sentence["class"],
             "type": sentence["type"],
-            "document_id": sentence["document_id"]
+            "document_id": ObjectId(sentence["document_id"])
         }
         pipeline = [
             { '$unwind': '$documents' },
             { '$match': { 'documents._id': sentence["document_id"] } }
         ]
-        document = Acquisition.aggregate(pipeline)
+        document = list(Acquisition.aggregate(pipeline))
         if len(document) != 1:
             abort(400) # Document not foudn
-        return Sentence.insert_one(sentence)
+        return {"_id": str(Sentence.insert_one(sentence).inserted_id) }
 
     document_id = request.args.get('document_id')
     if sentence_id is not None:
-        return jsonify(Sentence.find_one({ '_id': sentence_id }))
+        return dumps(Sentence.find_one({ '_id': ObjectId(sentence_id) }))
 
     if document_id is not None:
-        return jsonify(Sentence.find({ 'document_id': document_id }))
+        return dumps(Sentence.find({ 'document_id': ObjectId(document_id) }))
 
-    return jsonify(Sentence.find({}))
+    return dumps(Sentence.find({}))
 
 @app.route('/keyword', methods=['POST', 'GET'])
 def keyword():
     if request.method == 'POST':
-        sentence = request.get_json()
+        keyword = request.get_json()
         keyword = {
-            "value": keyword,
-            "type": "analyst"
+            "value": keyword["value"],
+            "type": keyword["type"]
         }
-        return jsonify(Keyword.insert_one(document))
+        return {"_id": str(Keyword.insert_one(keyword).inserted_id) }
 
     type = request.args.get('type')
     if type is not None:
-        return jsonify(Keyword.find({ 'type': type }))
-    return jsonify(Keyword.find({ }))
-
-# TODO: testing
+        return dumps(Keyword.find({ 'type': type }))
+    return dumps(Keyword.find({ }))

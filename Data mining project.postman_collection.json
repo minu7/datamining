@@ -1,0 +1,257 @@
+{
+	"variables": [],
+	"info": {
+		"name": "Data mining project",
+		"_postman_id": "8522b087-f4e1-5a5b-fca2-4e1879920e59",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Acquisition",
+			"description": "",
+			"item": [
+				{
+					"name": "Insert",
+					"request": {
+						"url": "localhost/acquisition",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"annuncement_date\" : \"2019-04-23T18:25:43.511Z\",\n    \"signing_date\": \"2019-04-23T18:25:43.511Z\",\n    \"status\": \"completed\",\n    \"acquiror\": {\n        \"name\": \"name\",\n        \"ticker\": \"ticker\",\n        \"state\": \"state\"\n    },\n    \"target\": {\n        \"name\": \"name\",\n        \"ticker\": \"ticker\",\n        \"state\": \"state\"\n    },\n    \"documents\": []\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get all",
+					"request": {
+						"url": "localhost/acquisition",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get One (Contain only acquisition and document)",
+					"request": {
+						"url": "localhost/acquisition/5e2a85d4c4bf17fb624f790a",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Document",
+			"description": "",
+			"item": [
+				{
+					"name": "insert",
+					"request": {
+						"url": "localhost/document",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"link\": \"link\",\n    \"date\": \"2019-04-23T18:25:43.511Z\",\n    \"source\": \"source\",\n    \"type\": \"type\",\n    \"acquisition_id\": \"5e2a90b1921335f9fca9c9b7\"\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sentence",
+			"description": "",
+			"item": [
+				{
+					"name": "Insert",
+					"request": {
+						"url": "localhost/sentence",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"text\": \"text\",\n    \"class\": \"class\",\n    \"type\": \"type\",\n    \"document_id\": \"5e2a90b1921335f9fca9c9b7\"\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get One",
+					"request": {
+						"url": "localhost/sentence/5e2a916d3fe85dd700cd8243",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get By document_id",
+					"request": {
+						"url": {
+							"raw": "localhost/sentence?document_id=5e2a90b1921335f9fca9c9b7",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"sentence"
+							],
+							"query": [
+								{
+									"key": "document_id",
+									"value": "5e2a90b1921335f9fca9c9b7",
+									"equals": true,
+									"description": ""
+								}
+							],
+							"variable": []
+						},
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get All",
+					"request": {
+						"url": "localhost/sentence",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Keyword",
+			"description": "",
+			"item": [
+				{
+					"name": "Insert",
+					"request": {
+						"url": "localhost/keyword",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"value\": \"value\",\n\t\"type\": \"type\"\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get Keyword by type",
+					"request": {
+						"url": {
+							"raw": "localhost/keyword?type=type",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"keyword"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "type",
+									"equals": true,
+									"description": ""
+								}
+							],
+							"variable": []
+						},
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get All",
+					"request": {
+						"url": "localhost/keyword",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Predict",
+			"request": {
+				"url": "127.0.0.1/train",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n\t\"The company gain market share\",\n\t\"Apple was not good\"\n]"
+				},
+				"description": "To predict new sentences"
+			},
+			"response": []
+		},
+		{
+			"name": "Train",
+			"request": {
+				"url": "localhost/train",
+				"method": "POST",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

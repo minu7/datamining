@@ -17,5 +17,3 @@ RUN pip install Flask
 RUN pip install pymongo
 RUN pip install scikit-learn
 RUN python download.py
-
-EXPOSE 80

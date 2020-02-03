@@ -16,4 +16,5 @@ RUN pip install xlrd
 RUN pip install Flask
 RUN pip install pymongo
 RUN pip install scikit-learn
+RUN pip install flask-cors
 RUN python download.py

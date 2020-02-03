@@ -5,8 +5,10 @@ import dateutil.parser
 from bson.json_util import dumps
 from bson import ObjectId
 from flask import abort
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 def get_date(string_date):
     return dateutil.parser.isoparse(string_date)

@@ -30,6 +30,7 @@ def import_documents():
             "link": link,
             "date": date,
             "source": source,
-            "type": type
+            "type": type,
+            "_id": ObjectId()
         }
         Acquisition.update_one({ "op_id": op_id }, { '$push': {'documents': document} })

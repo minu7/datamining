@@ -252,6 +252,41 @@
 				"description": ""
 			},
 			"response": []
+		},
+		{
+			"name": "tweets",
+			"request": {
+				"url": {
+					"raw": "localhost/tweets/lakers?since=2020-02-03&until=2020-02-05",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"tweets",
+						"lakers"
+					],
+					"query": [
+						{
+							"key": "since",
+							"value": "2020-02-03",
+							"equals": true,
+							"description": ""
+						},
+						{
+							"key": "until",
+							"value": "2020-02-05",
+							"equals": true,
+							"description": ""
+						}
+					],
+					"variable": []
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
 		}
 	]
 }

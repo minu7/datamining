@@ -6,6 +6,7 @@ from bson.json_util import dumps
 from bson import ObjectId
 from flask import abort
 from flask_cors import CORS
+import GetOldTweets3 as got
 
 app = Flask(__name__)
 CORS(app)
@@ -79,19 +80,26 @@ def document():
 def sentence(sentence_id):
     if request.method == 'POST':
         sentence = request.get_json()
-        sentence = {
-            "text": sentence["text"],
-            "class": sentence["class"],
-            "type": sentence["type"],
-            "document_id": ObjectId(sentence["document_id"])
-        }
-        pipeline = [
-            { '$unwind': '$documents' },
-            { '$match': { 'documents._id': sentence["document_id"] } }
-        ]
-        document = list(Acquisition.aggregate(pipeline))
-        if len(document) != 1:
-            abort(400) # Document not foudn
+        if sentence["type"] == 'twitter':
+            sentence = {
+                "text": sentence["text"],
+                "class": sentence["class"],
+                "type": sentence["type"]
+            }
+        else:
+            sentence = {
+                "text": sentence["text"],
+                "class": sentence["class"],
+                "type": sentence["type"],
+                "document_id": ObjectId(sentence["document_id"])
+            }
+            pipeline = [
+                { '$unwind': '$documents' },
+                { '$match': { 'documents._id': sentence["document_id"] } }
+            ]
+            document = list(Acquisition.aggregate(pipeline))
+            if len(document) != 1:
+                abort(400) # Document not foudn
         return {"_id": str(Sentence.insert_one(sentence).inserted_id) }
 
     document_id = request.args.get('document_id')
@@ -107,13 +115,23 @@ def sentence(sentence_id):
 def keyword():
     if request.method == 'POST':
         keyword = request.get_json()
-        keyword = {
-            "value": keyword["value"],
-            "type": keyword["type"]
-        }
-        return {"_id": str(Keyword.insert_one(keyword).inserted_id) }
+        Keyword.delete_many({})
+        return str(Keyword.insert_many(keyword).inserted_ids)
 
     type = request.args.get('type')
     if type is not None:
         return dumps(Keyword.find({ 'type': type }))
     return dumps(Keyword.find({ }))
+
+@app.route('/tweets/<username>', methods=['GET'])
+def tweets(username):
+    tweetCriteria = None
+    if request.args.get('since') is not None and request.args.get('until') is not None:
+        tweetCriteria = got.manager.TweetCriteria().setUsername(username).setMaxTweets(50).setSince(request.args.get('since')).setUntil(request.args.get('until'))
+    elif request.args.get('since') is not None:
+        tweetCriteria = got.manager.TweetCriteria().setUsername(username).setMaxTweets(50).setSince(request.args.get('since'))
+    else:
+        tweetCriteria = got.manager.TweetCriteria().setUsername(username).setMaxTweets(50)
+    tweets = got.manager.TweetManager.getTweets(tweetCriteria)
+    tweets = [tweet.text for tweet in tweets]
+    return jsonify({"tweets": tweets})

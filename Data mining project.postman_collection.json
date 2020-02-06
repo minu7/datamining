@@ -45,7 +45,7 @@
 				{
 					"name": "Get One (Contain only acquisition and document)",
 					"request": {
-						"url": "localhost/acquisition/5e2a85d4c4bf17fb624f790a",
+						"url": "localhost/acquisition/5e276367ed81cfb7ee205165",
 						"method": "GET",
 						"header": [],
 						"body": {},
@@ -73,7 +73,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"link\": \"link\",\n    \"date\": \"2019-04-23T18:25:43.511Z\",\n    \"source\": \"source\",\n    \"type\": \"type\",\n    \"acquisition_id\": \"5e2a90b1921335f9fca9c9b7\"\n}"
+							"raw": "{\n\t\"title\": \"title\",\n\t\"link\": \"link\",\n    \"date\": \"2019-04-23T18:25:43.511Z\",\n    \"source\": \"source\",\n    \"type\": \"type\",\n    \"acquisition_id\": \"5e276367ed81cfb7ee205165\"\n}"
 						},
 						"description": ""
 					},
@@ -99,7 +99,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"text\": \"text\",\n    \"class\": \"class\",\n    \"type\": \"type\",\n    \"document_id\": \"5e2a90b1921335f9fca9c9b7\"\n}"
+							"raw": "{\n\t\"text\": \"text\",\n    \"class\": \"class\",\n    \"type\": \"twitter\",\n    \"document_id\": \"5e2a90b1921335f9fca2c9b7\"\n}"
 						},
 						"description": ""
 					},
@@ -175,7 +175,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"value\": \"value\",\n\t\"type\": \"type\"\n}"
+							"raw": "[{\n\t\"value\": \"value\",\n\t\"type\": \"type\"\n}, {\n\t\"value\": \"value\",\n\t\"type\": \"type\"\n}]"
 						},
 						"description": ""
 					},

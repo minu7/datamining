@@ -67,6 +67,7 @@ def document():
     documents = request.get_json()
     acquisition_id = documents["acquisition_id"]
     d = {
+        "title": documents["title"],
         "link": documents["link"],
         "date": get_date(documents["date"]),
         "source": documents["source"],
@@ -116,7 +117,7 @@ def keyword():
     if request.method == 'POST':
         keyword = request.get_json()
         Keyword.delete_many({})
-        return str(Keyword.insert_many(keyword).inserted_ids)
+        return dumps(Keyword.insert_many(keyword).inserted_ids)
 
     type = request.args.get('type')
     if type is not None:

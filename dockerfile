@@ -18,4 +18,5 @@ RUN pip install pymongo
 RUN pip install scikit-learn
 RUN pip install flask-cors
 RUN pip install GetOldTweets3
+RUN pip install matplotlib
 RUN python download.py

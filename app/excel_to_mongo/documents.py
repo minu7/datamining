@@ -1,6 +1,7 @@
 import sys
 import os
 from os.path import dirname, abspath
+from bson import ObjectId
 
 sys.path.insert(1, dirname(dirname(abspath(__file__)))) # this is needed for import Acquisition (we need to add the root folder in module search paths)
 

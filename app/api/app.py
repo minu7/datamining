@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, request
-import pickle
 from api.db import *
 import dateutil.parser
 from bson.json_util import dumps
@@ -7,6 +6,26 @@ from bson import ObjectId
 from flask import abort
 from flask_cors import CORS
 import GetOldTweets3 as got
+import numpy as np
+from sklearn import svm
+from sklearn.neighbors import KNeighborsClassifier as knn
+from sklearn.linear_model import LogisticRegression as lr
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_predict
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
+from api.train_utility import most_common_keywords
+from api.train_utility import most_common_keywords_with_freq
+from api.train_utility import words_presences
+from sklearn.metrics import confusion_matrix
+from joblib import dump, load
+
+from api.cluster_utility import plot_dendrogram
+from matplotlib import pyplot as plt
+from scipy.cluster.hierarchy import dendrogram
+from sklearn.cluster import AgglomerativeClustering
+import io
+import base64
 
 app = Flask(__name__)
 CORS(app)
@@ -16,22 +35,94 @@ def get_date(string_date):
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    model = Model.find_one({}, sort=[( '_id', pymongo.DESCENDING )])
-    loaded_model = pickle.loads(model.model) # pickle.dumps(model) to get string
-    sentences = request.get_json()
-    X = [] # TODO: We have to decide if we use most freq words, words precences or words counts
-    predicted = loaded_model.predict(X)
-    result = zip(X, predicted)
+    params = request.get_json()
+    model = Model.find_one({ "type": params["model"]  }, sort=[( '_id', pymongo.DESCENDING )])
+    clf = load('models/' + str(model["_id"]))
+    sentences = params["sentences"]
+    pst = PorterStemmer()
+    lemma_sentences = [[pst.stem(token) for token in word_tokenize(sentence.lower())] for sentence in sentences]
+    most_freq = Attribute.find({}, sort=[( 'id', pymongo.ASCENDING )])
+    most_freq = [word["value"] for word in most_freq]
+    X = words_presences(most_freq, lemma_sentences)
+    predicted = clf.predict(X)
+    result = list(zip(sentences, predicted))
+    result = [{ "sentence": x[0], "prediction": int(x[1]) } for x in result]
     return jsonify(result)
 
 @app.route('/train', methods=['POST'])
 def train():
-    # TODO: choose the model to train and the method
-    # clf = svm.SVC()
-    # clf.fit(X, y)
-    # model = pickle.dumps(clf)
-    # Model.insert_one({ "model": model })
-    return "model trained";
+    sentences = Sentence.find({})
+    sentences = [sentence for sentence in sentences]
+    pst = PorterStemmer()
+    lemma_sentences = [[pst.stem(token) for token in word_tokenize(sentence["text"].lower())] for sentence in sentences]
+    most_freq = most_common_keywords_with_freq(lemma_sentences, 500)
+    Attribute.delete_many({})
+    Attribute.insert_many([{ "id": word[0],"value": word[1][0], "count": word[1][1] } for word in enumerate(most_freq)])
+    most_freq = [x[0] for x in most_freq]
+    X_presences_common = words_presences(most_freq, lemma_sentences)
+    y = [sentence["class"] for sentence in sentences]
+
+    clf = svm.SVC(kernel='linear', C=1)
+    scores = cross_val_score(clf, X_presences_common, y, cv=10)
+    y_pred = cross_val_predict(clf, X_presences_common, y, cv=10)
+    clf = clf.fit(X_presences_common, y)
+    conf_mat = confusion_matrix(y, clf.predict(X_presences_common))
+    svmDocument = { "type": "svm", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist() }
+    dump(clf, 'models/' + str(Model.insert_one(svmDocument).inserted_id))
+    del svmDocument["_id"]
+
+    clf = knn(n_neighbors=3, metric='minkowski')
+    scores = cross_val_score(clf, X_presences_common, y, cv=10)
+    y_pred = cross_val_predict(clf, X_presences_common, y, cv=10)
+    clf = clf.fit(X_presences_common, y)
+    conf_mat = confusion_matrix(y, clf.predict(X_presences_common))
+    knnDocument = { "type": "knn", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist() }
+    dump(clf, 'models/' + str(Model.insert_one(knnDocument).inserted_id))
+    del knnDocument["_id"]
+
+    clf = lr()
+    scores = cross_val_score(clf, X_presences_common, y, cv=10)
+    y_pred = cross_val_predict(clf, X_presences_common, y, cv=10)
+    clf = clf.fit(X_presences_common, y)
+    conf_mat = confusion_matrix(y, clf.predict(X_presences_common))
+    logisticDocument = { "type": "logistic", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist() }
+    dump(clf, 'models/' + str(Model.insert_one(logisticDocument).inserted_id))
+    del logisticDocument["_id"]
+
+    return jsonify({ "svm": svmDocument, "knn": knnDocument, "logistic": logisticDocument })
+
+@app.route('/cluster', methods=['POST'])
+def cluster():
+    threshold = request.get_json()["threshold"]
+    pipeline = [
+        { '$group': { '_id': '$document_id', 'sentences': { '$push': '$text' } } },
+        { '$project': { '_id': 1, 'text': { '$reduce': { 'input': '$sentences', 'initialValue': '', 'in': { '$concat': ['$$value', ' ', '$$this'] } } } } }
+    ]
+    document = list(Sentence.aggregate(pipeline))
+    texts = [sentence["text"] for sentence in document]
+    pst = PorterStemmer()
+    stemmed_texts = [[pst.stem(token) for token in word_tokenize(text.lower())] for text in texts]
+
+    most_freq = most_common_keywords(stemmed_texts, 300)
+
+    X_presences_common = words_presences(most_freq, stemmed_texts)
+    # “complete”, “average”, “single”
+    model = AgglomerativeClustering(distance_threshold=threshold, n_clusters=None, linkage="complete")
+
+    model = model.fit(X_presences_common)
+    result = list(zip(texts, model.labels_))
+    result = [{ "text": x[0], "cluster": int(x[1]) } for x in result]
+    plt.title('Hierarchical Clustering Dendrogram')
+    # plot the top three levels of the dendrogram
+    plot_dendrogram(model, p=3, get_leaves=True)
+    plt.xlabel("Number of points in node (or index of point if no parenthesis).")
+    stringBytes = io.BytesIO()
+    plt.savefig(stringBytes, format='png')
+    stringBytes.seek(0)
+    base64Representation = base64.b64encode(stringBytes.read())
+    encodedStr = str(base64Representation, "utf-8")
+    return dumps({ "result": result, "image": encodedStr })
+
 
 @app.route('/acquisition', methods=['POST', 'GET'], defaults={'acquisition_id': None})
 @app.route('/acquisition/<acquisition_id>', methods=['POST', 'GET'])

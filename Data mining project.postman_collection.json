@@ -225,7 +225,7 @@
 		{
 			"name": "Predict",
 			"request": {
-				"url": "127.0.0.1/train",
+				"url": "127.0.0.1/predict",
 				"method": "POST",
 				"header": [
 					{
@@ -236,7 +236,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "[\n\t\"The company gain market share\",\n\t\"Apple was not good\"\n]"
+					"raw": "{\n\t\"model\": \"svm\",\n\t\"sentences\": [\n\t\"The company gain market share\",\n\t\"Apple was not good\"\n\t]\n}"
 				},
 				"description": "To predict new sentences"
 			},
@@ -284,6 +284,26 @@
 				"method": "GET",
 				"header": [],
 				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Cluster",
+			"request": {
+				"url": "localhost/cluster",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"threshold\": 100\n}"
+				},
 				"description": ""
 			},
 			"response": []

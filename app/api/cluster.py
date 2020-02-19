@@ -13,6 +13,8 @@ import xlrd
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram
 from sklearn.cluster import AgglomerativeClustering
+import io
+import base64
 
 def plot_dendrogram(model, **kwargs):
     # Create linkage matrix and then plot the dendrogram
@@ -34,40 +36,32 @@ def plot_dendrogram(model, **kwargs):
 
     # Plot the corresponding dendrogram
     dendrogram(linkage_matrix, **kwargs)
-texts = []
-data = xlrd.open_workbook(filename = 'app/data/texts.xlsx')
-rows = data.sheets()[0].get_rows()
 
-for i, val in enumerate(rows):
-    if i == 0:
-        continue # discard header
-        # remove all useless character that are frequent
-    texts.append(val[6].value.replace("\n", " ").replace("(", " ").replace(")", " ").replace("''", " ").replace(" j ", " ").replace("`", " ").replace("-", " ").replace("[", " ").replace("]", " "))
+def cluster():
+    sentences = Sentence.find({ "type": "analyst" })
+    texts = [sentence["text"] for sentence in sentences]
+    pst = PorterStemmer()
+    stemmed_texts = [[pst.stem(token) for token in word_tokenize(text.lower())] for text in texts]
 
+    most_freq = most_common_keywords(stemmed_texts, 300)
 
-pst = PorterStemmer()
-stemmed_texts = [[pst.stem(token) for token in word_tokenize(text.lower())] for text in texts]
+    X_presences_common = words_presences(most_freq, stemmed_texts)
+    # “complete”, “average”, “single”
+    model = AgglomerativeClustering(distance_threshold=11.4, n_clusters=None, linkage="complete")
 
-most_freq = most_common_keywords(stemmed_texts, 300)
-most_freq.pop(5)
-most_freq.pop(5)
-most_freq.pop(6)
-most_freq.pop(10)
-most_freq.pop(97)
-most_freq.pop(119)
-most_freq.pop(129)
+    print(np.any(X_presences_common, axis=1))
+    model = model.fit(X_presences_common)
+    print(model.labels_)
+    plt.title('Hierarchical Clustering Dendrogram')
+    # plot the top three levels of the dendrogram
+    plot_dendrogram(model, p=3, get_leaves=True)
+    plt.xlabel("Number of points in node (or index of point if no parenthesis).")
+    # plt.show()
+    # stringBytes = io.BytesIO()
+    # plt.savefig(stringBytes, format='png')
+    plt.savefig("test.png", format='png')
 
-X_presences_common = words_presences(most_freq, stemmed_texts)
-# “complete”, “average”, “single”
-model = AgglomerativeClustering(distance_threshold=11.4, n_clusters=None, linkage="average")
-
-print(np.any(X_presences_common, axis=1))
-model = model.fit(X_presences_common)
-print(model.labels_)
-plt.title('Hierarchical Clustering Dendrogram')
-# plot the top three levels of the dendrogram
-plot_dendrogram(model, p=3, get_leaves=True)
-plt.xlabel("Number of points in node (or index of point if no parenthesis).")
-plt.show()
-# pst = PorterStemmer()
-# lemma_sentences = [[pst.stem(token) for token in word_tokenize(sentence["text"].lower())] for sentence in sentences]
+# stringBytes.seek(0)
+# base64Representation = base64.b64encode(stringBytes.read())
+# encodedStr = str(base64Representation, "utf-8")
+# print(encodedStr)

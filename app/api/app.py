@@ -100,6 +100,7 @@ def cluster():
     ]
     document = list(Sentence.aggregate(pipeline))
     texts = [sentence["text"] for sentence in document]
+    return str(len(document))
     pst = PorterStemmer()
     stemmed_texts = [[pst.stem(token) for token in word_tokenize(text.lower())] for text in texts]
 
@@ -171,28 +172,20 @@ def document():
 @app.route('/sentence/<sentence_id>', methods=['POST', 'GET'])
 def sentence(sentence_id):
     if request.method == 'POST':
-        sentence = request.get_json()
-        if sentence["type"] == 'twitter':
-            sentence = {
-                "text": sentence["text"],
-                "class": sentence["class"],
-                "type": sentence["type"]
-            }
+        sentences = request.get_json()
+        if sentences["type"] == 'twitter':
+            sentences = [{ "text": sentence["text"], "class": sentence["class"], "type": sentences["type"]} for sentence in sentences["sentences"]]
         else:
-            sentence = {
-                "text": sentence["text"],
-                "class": sentence["class"],
-                "type": sentence["type"],
-                "document_id": ObjectId(sentence["document_id"])
-            }
+            sentences = [{"text": sentence["text"], "class": sentence["class"], "type": sentences["type"], "document_id": ObjectId(sentences["document_id"])} for sentence in sentences["sentences"]]
             pipeline = [
                 { '$unwind': '$documents' },
-                { '$match': { 'documents._id': sentence["document_id"] } }
+                { '$match': { 'documents._id': sentences["document_id"] } }
             ]
             document = list(Acquisition.aggregate(pipeline))
             if len(document) != 1:
-                abort(400) # Document not foudn
-        return {"_id": str(Sentence.insert_one(sentence).inserted_id) }
+                abort(400) # Document not found
+        Sentence.insert_many(sentences)
+        return dumps({ 'inserted': True })
 
     document_id = request.args.get('document_id')
     if sentence_id is not None:

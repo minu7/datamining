@@ -65,7 +65,6 @@ def import_sentences():
             "class": class_,
             "type": "analyst",
         }
-        print(d)
         pipeline = [
             { '$unwind': '$documents' },
             { '$match': { 'documents.date': date, 'documents.source': source } }
@@ -73,9 +72,9 @@ def import_sentences():
         document = Acquisition.aggregate(pipeline)
         document = list(document)
         if len(document) != 1:
-            # print(document)
-            # raise Exception("duplicate error")
-            d["document_id"] = None
+            print(document)
+            print(d)
+            raise Exception("duplicate error")
         else:
             d["document_id"] = document[0]["_id"]
         Sentence.insert_one(d)

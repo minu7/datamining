@@ -99,7 +99,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"text\": \"text\",\n    \"class\": \"class\",\n    \"type\": \"twitter\",\n    \"document_id\": \"5e2a90b1921335f9fca2c9b7\"\n}"
+							"raw": "{\n\t\"sentences\": [\n\t\t{ \"text\": \"text\",\n    \t\"class\": \"class\"\n\t\t},{ \"text\": \"text\",\n    \t\"class\": \"class\"\n\t\t}, { \"text\": \"text\",\n    \t\"class\": \"class\"\n\t\t}, { \"text\": \"text\",\n    \t\"class\": \"class\"\n\t\t} ],\n    \"type\": \"twitter\",\n    \"document_id\": \"5e2a90b1921335f9fca2c9b7\"\n}"
 						},
 						"description": ""
 					},

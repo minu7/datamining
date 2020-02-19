@@ -100,7 +100,6 @@ def cluster():
     ]
     document = list(Sentence.aggregate(pipeline))
     texts = [sentence["text"] for sentence in document]
-    return str(len(document))
     pst = PorterStemmer()
     stemmed_texts = [[pst.stem(token) for token in word_tokenize(text.lower())] for text in texts]
 

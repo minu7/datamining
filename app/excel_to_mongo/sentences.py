@@ -42,7 +42,7 @@ def import_sentences():
         if len(document) != 1:
             raise Exception("duplicate error")
             exit()
-        d["document_id"] = document[0]["_id"]
+        d["document_id"] = document[0]["documents"]["_id"]
         Sentence.insert_one(d)
 
 
@@ -76,5 +76,5 @@ def import_sentences():
             print(d)
             raise Exception("duplicate error")
         else:
-            d["document_id"] = document[0]["_id"]
+            d["document_id"] = document[0]["documents"]["_id"]
         Sentence.insert_one(d)

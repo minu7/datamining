@@ -1,6 +1,9 @@
 from nltk.probability import FreqDist
 from nltk.corpus import stopwords
 import functools
+from sentence_transformers import SentenceTransformer
+import numpy as np
+from scipy.cluster.hierarchy import dendrogram
 
 def most_common_keywords(sentences, most_common):
     """
@@ -120,3 +123,61 @@ def words_counts(words, sentences):
     for sentence in sentences:
         counts.append([sentence.count(word) for word in words])
     return counts
+
+def transformer_embeddings(sentences):
+    """
+    Given the sentences return the vector embedding.
+
+    Parameters
+    ----------
+    sentences: [str]
+        Array of sentences
+
+    Raises
+    ------
+    RuntimeError
+
+    Returns
+    -------
+        [[float]]
+    """
+    model = SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
+    return model.encode(sentences)
+
+
+def plot_dendrogram(model, **kwargs):
+    """
+    Given the model plot the dendogram.
+
+    Parameters
+    ----------
+    model: sklearn
+        Clustering model by sklearn library
+
+    Raises
+    ------
+    RuntimeError
+
+    Returns
+    -------
+        None
+    """
+    # Create linkage matrix and then plot the dendrogram
+
+    # create the counts of samples under each node
+    counts = np.zeros(model.children_.shape[0])
+    n_samples = len(model.labels_)
+    for i, merge in enumerate(model.children_):
+        current_count = 0
+        for child_idx in merge:
+            if child_idx < n_samples:
+                current_count += 1  # leaf node
+            else:
+                current_count += counts[child_idx - n_samples]
+        counts[i] = current_count
+
+    linkage_matrix = np.column_stack([model.children_, model.distances_,
+                                      counts]).astype(float)
+
+    # Plot the corresponding dendrogram
+    dendrogram(linkage_matrix, **kwargs)

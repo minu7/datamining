@@ -19,4 +19,5 @@ RUN pip install scikit-learn
 RUN pip install flask-cors
 RUN pip install GetOldTweets3
 RUN pip install matplotlib
+RUN pip install sentence-transformers
 RUN python download.py

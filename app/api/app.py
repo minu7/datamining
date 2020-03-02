@@ -13,14 +13,12 @@ from sklearn.linear_model import LogisticRegression as lr
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_val_predict
 from nltk.tokenize import word_tokenize
-from nltk.stem import PorterStemmer
-from api.train_utility import most_common_keywords
-from api.train_utility import most_common_keywords_with_freq
-from api.train_utility import words_presences
+from api.utility import words_presences
 from sklearn.metrics import confusion_matrix
 from joblib import dump, load
 
-from api.cluster_utility import plot_dendrogram
+from sentence_transformers import SentenceTransformer
+from api.utility import plot_dendrogram
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram
 from sklearn.cluster import AgglomerativeClustering
@@ -29,6 +27,8 @@ import base64
 
 app = Flask(__name__)
 CORS(app)
+
+transformer = SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
 
 def get_date(string_date):
     return dateutil.parser.isoparse(string_date)
@@ -94,33 +94,28 @@ def train():
 @app.route('/cluster', methods=['POST'])
 def cluster():
     threshold = request.get_json()["threshold"]
+    affinity = request.get_json()["affinity"]
+    linkage = request.get_json()["linkage"]
     pipeline = [
         { '$group': { '_id': '$document_id', 'sentences': { '$push': '$text' } } },
         { '$project': { '_id': 1, 'text': { '$reduce': { 'input': '$sentences', 'initialValue': '', 'in': { '$concat': ['$$value', ' ', '$$this'] } } } } }
     ]
     document = list(Sentence.aggregate(pipeline))
     texts = [sentence["text"] for sentence in document]
-    pst = PorterStemmer()
-    stemmed_texts = [[pst.stem(token) for token in word_tokenize(text.lower())] for text in texts]
 
-    most_freq = most_common_keywords(stemmed_texts, 300)
-
-    X_presences_common = words_presences(most_freq, stemmed_texts)
-    # “complete”, “average”, “single”
-    model = AgglomerativeClustering(distance_threshold=threshold, n_clusters=None, linkage="complete")
-
+    X_presences_common = transformer.encode(texts)
+    model = AgglomerativeClustering(distance_threshold=threshold, n_clusters=None, linkage=linkage, affinity=affinity)
     model = model.fit(X_presences_common)
     result = list(zip(texts, model.labels_))
     result = [{ "text": x[0], "cluster": int(x[1]) } for x in result]
-    plt.title('Hierarchical Clustering Dendrogram')
+    plt.title("Hierarchical Clustering {} {} dendrogram".format(affinity, linkage))
     # plot the top three levels of the dendrogram
     plot_dendrogram(model, p=3, get_leaves=True)
     plt.xlabel("Number of points in node (or index of point if no parenthesis).")
     stringBytes = io.BytesIO()
-    plt.savefig(stringBytes, format='png')
-    stringBytes.seek(0)
-    base64Representation = base64.b64encode(stringBytes.read())
-    encodedStr = str(base64Representation, "utf-8")
+    plt.savefig(stringBytes, format='png', dpi=300)
+    base64Representation = base64.b64encode(stringBytes.getvalue())
+    encodedStr = base64Representation.decode()
     return dumps({ "result": result, "image": encodedStr })
 
 

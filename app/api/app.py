@@ -169,13 +169,15 @@ def document():
 def sentence(sentence_id):
     if request.method == 'POST':
         sentences = request.get_json()
+        document_id = sentences["document_id"]
+        type = sentences["type"]
         if sentences["type"] == 'twitter':
-            sentences = [{ "text": sentence["text"], "class": sentence["class"], "type": sentences["type"]} for sentence in sentences["sentences"]]
+            sentences = [{ "text": sentence["text"], "class": sentence["class"], "type": type} for sentence in sentences["sentences"]]
         else:
-            sentences = [{"text": sentence["text"], "class": sentence["class"], "type": sentences["type"], "document_id": ObjectId(sentences["document_id"])} for sentence in sentences["sentences"]]
+            sentences = [{"text": sentence["text"], "class": sentence["class"], "type": type, "document_id": ObjectId(document_id)} for sentence in sentences["sentences"]]
             pipeline = [
                 { '$unwind': '$documents' },
-                { '$match': { 'documents._id': sentences["document_id"] } }
+                { '$match': { 'documents._id': ObjectId(document_id) } }
             ]
             document = list(Acquisition.aggregate(pipeline))
             if len(document) != 1:

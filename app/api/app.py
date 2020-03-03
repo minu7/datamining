@@ -28,7 +28,7 @@ import base64
 app = Flask(__name__)
 CORS(app)
 
-transformer = SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
+transformer = SentenceTransformer('roberta-large-nli-stsb-mean-tokens')
 
 def get_date(string_date):
     return dateutil.parser.isoparse(string_date)
@@ -39,11 +39,7 @@ def predict():
     model = Model.find_one({ "type": params["model"]  }, sort=[( '_id', pymongo.DESCENDING )])
     clf = load('models/' + str(model["_id"]))
     sentences = params["sentences"]
-    pst = PorterStemmer()
-    lemma_sentences = [[pst.stem(token) for token in word_tokenize(sentence.lower())] for sentence in sentences]
-    most_freq = Attribute.find({}, sort=[( 'id', pymongo.ASCENDING )])
-    most_freq = [word["value"] for word in most_freq]
-    X = words_presences(most_freq, lemma_sentences)
+    X = transformer.encode(sentences)
     predicted = clf.predict(X)
     result = list(zip(sentences, predicted))
     result = [{ "sentence": x[0], "prediction": int(x[1]) } for x in result]
@@ -51,22 +47,16 @@ def predict():
 
 @app.route('/train', methods=['POST'])
 def train():
-    sentences = Sentence.find({})
+    sentences = Sentence.find({ "type": "analyst" })
     sentences = [sentence for sentence in sentences]
-    pst = PorterStemmer()
-    lemma_sentences = [[pst.stem(token) for token in word_tokenize(sentence["text"].lower())] for sentence in sentences]
-    most_freq = most_common_keywords_with_freq(lemma_sentences, 500)
-    Attribute.delete_many({})
-    Attribute.insert_many([{ "id": word[0],"value": word[1][0], "count": word[1][1] } for word in enumerate(most_freq)])
-    most_freq = [x[0] for x in most_freq]
-    X_presences_common = words_presences(most_freq, lemma_sentences)
+    X_presences_common = transformer.encode([sentence["text"] for sentence in sentences])
     y = [sentence["class"] for sentence in sentences]
 
     clf = svm.SVC(kernel='linear', C=1)
     scores = cross_val_score(clf, X_presences_common, y, cv=10)
     y_pred = cross_val_predict(clf, X_presences_common, y, cv=10)
     clf = clf.fit(X_presences_common, y)
-    conf_mat = confusion_matrix(y, clf.predict(X_presences_common))
+    conf_mat = confusion_matrix(y, y_pred)
     svmDocument = { "type": "svm", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist() }
     dump(clf, 'models/' + str(Model.insert_one(svmDocument).inserted_id))
     del svmDocument["_id"]
@@ -75,7 +65,7 @@ def train():
     scores = cross_val_score(clf, X_presences_common, y, cv=10)
     y_pred = cross_val_predict(clf, X_presences_common, y, cv=10)
     clf = clf.fit(X_presences_common, y)
-    conf_mat = confusion_matrix(y, clf.predict(X_presences_common))
+    conf_mat = confusion_matrix(y, y_pred)
     knnDocument = { "type": "knn", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist() }
     dump(clf, 'models/' + str(Model.insert_one(knnDocument).inserted_id))
     del knnDocument["_id"]
@@ -84,7 +74,7 @@ def train():
     scores = cross_val_score(clf, X_presences_common, y, cv=10)
     y_pred = cross_val_predict(clf, X_presences_common, y, cv=10)
     clf = clf.fit(X_presences_common, y)
-    conf_mat = confusion_matrix(y, clf.predict(X_presences_common))
+    conf_mat = confusion_matrix(y, y_pred)
     logisticDocument = { "type": "logistic", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist() }
     dump(clf, 'models/' + str(Model.insert_one(logisticDocument).inserted_id))
     del logisticDocument["_id"]
@@ -93,7 +83,7 @@ def train():
 
 @app.route('/cluster', methods=['POST'])
 def cluster():
-    threshold = request.get_json()["threshold"]
+    threshold = float(request.get_json()["threshold"])
     affinity = request.get_json()["affinity"]
     linkage = request.get_json()["linkage"]
     pipeline = [
@@ -116,6 +106,9 @@ def cluster():
     plt.savefig(stringBytes, format='png', dpi=300)
     base64Representation = base64.b64encode(stringBytes.getvalue())
     encodedStr = base64Representation.decode()
+    plt.clf()
+    plt.cla()
+    plt.close()
     return dumps({ "result": result, "image": encodedStr })
 
 

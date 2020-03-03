@@ -5,7 +5,7 @@ from sklearn.neighbors import KNeighborsClassifier as knn
 from sklearn.linear_model import LogisticRegression as lr
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_val_predict
-from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
 from db import Sentence
 from db import Keyword
 
@@ -37,6 +37,7 @@ y_pred = cross_val_predict(clf, X, y, cv=10)
 print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 clf = clf.fit(X, y)
 conf_mat = confusion_matrix(y, y_pred)
+f_measure = f1_score(y, y_pred, average=None)
 print(conf_mat.tolist())
 print(accuracy_score(y, clf.predict(X)))
 

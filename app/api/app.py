@@ -14,7 +14,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_val_predict
 from nltk.tokenize import word_tokenize
 from api.utility import words_presences
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 from joblib import dump, load
 
 from sentence_transformers import SentenceTransformer
@@ -28,7 +28,7 @@ import base64
 app = Flask(__name__)
 CORS(app)
 
-transformer = SentenceTransformer('roberta-large-nli-stsb-mean-tokens')
+transformer = SentenceTransformer('bert-base-nli-mean-tokens')
 
 def get_date(string_date):
     return dateutil.parser.isoparse(string_date)
@@ -49,33 +49,42 @@ def predict():
 def train():
     sentences = Sentence.find({ "type": "analyst" })
     sentences = [sentence for sentence in sentences]
-    X_presences_common = transformer.encode([sentence["text"] for sentence in sentences])
+    X = transformer.encode([sentence["text"] for sentence in sentences])
     y = [sentence["class"] for sentence in sentences]
 
     clf = svm.SVC(kernel='linear', C=1)
-    scores = cross_val_score(clf, X_presences_common, y, cv=10)
-    y_pred = cross_val_predict(clf, X_presences_common, y, cv=10)
-    clf = clf.fit(X_presences_common, y)
+    scores = cross_val_score(clf, X, y, cv=10)
+    y_pred = cross_val_predict(clf, X, y, cv=10)
+    clf = clf.fit(X, y)
     conf_mat = confusion_matrix(y, y_pred)
-    svmDocument = { "type": "svm", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist() }
+    f_measure = f1_score(y, y_pred, average=None)
+    precision = precision_score(y, y_pred, average=None)
+    recall = recall_score(y, y_pred, average=None)
+    svmDocument = { "type": "svm", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist(), "precision": precision.tolist(), "recall": recall.tolist(), "f_measure": f_measure.tolist() }
     dump(clf, 'models/' + str(Model.insert_one(svmDocument).inserted_id))
     del svmDocument["_id"]
 
     clf = knn(n_neighbors=3, metric='minkowski')
-    scores = cross_val_score(clf, X_presences_common, y, cv=10)
-    y_pred = cross_val_predict(clf, X_presences_common, y, cv=10)
-    clf = clf.fit(X_presences_common, y)
+    scores = cross_val_score(clf, X, y, cv=10)
+    y_pred = cross_val_predict(clf, X, y, cv=10)
+    clf = clf.fit(X, y)
     conf_mat = confusion_matrix(y, y_pred)
-    knnDocument = { "type": "knn", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist() }
+    f_measure = f1_score(y, y_pred, average=None)
+    precision = precision_score(y, y_pred, average=None)
+    recall = recall_score(y, y_pred, average=None)
+    knnDocument = { "type": "knn", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist(), "precision": precision.tolist(), "recall": recall.tolist(), "f_measure": f_measure.tolist() }
     dump(clf, 'models/' + str(Model.insert_one(knnDocument).inserted_id))
     del knnDocument["_id"]
 
     clf = lr()
-    scores = cross_val_score(clf, X_presences_common, y, cv=10)
-    y_pred = cross_val_predict(clf, X_presences_common, y, cv=10)
-    clf = clf.fit(X_presences_common, y)
+    scores = cross_val_score(clf, X, y, cv=10)
+    y_pred = cross_val_predict(clf, X, y, cv=10)
+    clf = clf.fit(X, y)
     conf_mat = confusion_matrix(y, y_pred)
-    logisticDocument = { "type": "logistic", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist() }
+    f_measure = f1_score(y, y_pred, average=None)
+    precision = precision_score(y, y_pred, average=None)
+    recall = recall_score(y, y_pred, average=None)
+    logisticDocument = { "type": "logistic", "accuracy": scores.mean(), "std": scores.std(), "confusion_matrix": conf_mat.tolist(), "precision": precision.tolist(), "recall": recall.tolist(), "f_measure": f_measure.tolist() }
     dump(clf, 'models/' + str(Model.insert_one(logisticDocument).inserted_id))
     del logisticDocument["_id"]
 
@@ -93,9 +102,9 @@ def cluster():
     document = list(Sentence.aggregate(pipeline))
     texts = [sentence["text"] for sentence in document]
 
-    X_presences_common = transformer.encode(texts)
+    X = transformer.encode(texts)
     model = AgglomerativeClustering(distance_threshold=threshold, n_clusters=None, linkage=linkage, affinity=affinity)
-    model = model.fit(X_presences_common)
+    model = model.fit(X)
     result = list(zip(texts, model.labels_))
     result = [{ "text": x[0], "cluster": int(x[1]) } for x in result]
     plt.title("Hierarchical Clustering {} {} dendrogram".format(affinity, linkage))

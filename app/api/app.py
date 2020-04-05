@@ -198,6 +198,7 @@ def sentence(sentence_id):
 def keyword():
     if request.method == 'POST':
         keyword = request.get_json()
+        Keyword.delete_many({})
         keyword = [{ "value": keyword["value"], "type": keyword["type"] } for keyword in keyword]
         return dumps(Keyword.insert_many(keyword).inserted_ids)
 
